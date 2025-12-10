@@ -1,4 +1,4 @@
-/Users/syanak/42/BilişimVadisiHackathon/common/src/main/java/com/thebuilders/common/event/PasswordResetEvent.java
-/Users/syanak/42/BilişimVadisiHackathon/common/src/main/java/com/thebuilders/common/enums/Role.java
-/Users/syanak/42/BilişimVadisiHackathon/common/src/main/java/com/thebuilders/common/dto/ApiResponse.java
-/Users/syanak/42/BilişimVadisiHackathon/common/src/main/java/com/thebuilders/common/event/UserRegisteredEvent.java
+/Users/syanak/42/microservice-auth/common/src/main/java/com/thebuilders/common/enums/Role.java
+/Users/syanak/42/microservice-auth/common/src/main/java/com/thebuilders/common/event/UserRegisteredEvent.java
+/Users/syanak/42/microservice-auth/common/src/main/java/com/thebuilders/common/dto/ApiResponse.java
+/Users/syanak/42/microservice-auth/common/src/main/java/com/thebuilders/common/event/PasswordResetEvent.java

@@ -8,9 +8,9 @@ services:
     image: postgres:16-alpine
     container_name: auth-db
     environment:
-      POSTGRES_DB: auth_db
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: ${DB_NAME:-auth_db}
+      POSTGRES_USER: ${DB_USERNAME:?DB_USERNAME is required}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD is required}
     ports:
       - "5432:5432"
     volumes:
@@ -18,7 +18,7 @@ services:
     networks:
       - career-portal-network
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME:-postgres}"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -28,8 +28,8 @@ services:
     image: rabbitmq:3-management-alpine
     container_name: rabbitmq
     environment:
-      RABBITMQ_DEFAULT_USER: guest
-      RABBITMQ_DEFAULT_PASS: guest
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USERNAME:?RABBITMQ_USERNAME is required}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:?RABBITMQ_PASSWORD is required}
     ports:
       - "5672:5672"   # AMQP
       - "15672:15672" # Management UI
@@ -71,7 +71,7 @@ services:
       - "8080:8080"
     environment:
       - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://discovery-server:8761/eureka/
-      - JWT_SECRET=mySecretKeyForJWTTokenGenerationThatIsAtLeast256BitsLong2024
+      - JWT_SECRET=${JWT_SECRET:?JWT_SECRET is required}
     depends_on:
       discovery-server:
         condition: service_healthy
@@ -87,12 +87,16 @@ services:
     ports:
       - "8081:8081"
     environment:
-      - SPRING_DATASOURCE_URL=jdbc:postgresql://auth-db:5432/auth_db
-      - DB_USERNAME=postgres
-      - DB_PASSWORD=postgres
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://auth-db:5432/${DB_NAME:-auth_db}
+      - DB_USERNAME=${DB_USERNAME:?DB_USERNAME is required}
+      - DB_PASSWORD=${DB_PASSWORD:?DB_PASSWORD is required}
       - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://discovery-server:8761/eureka/
       - RABBITMQ_HOST=rabbitmq
-      - JWT_SECRET=mySecretKeyForJWTTokenGenerationThatIsAtLeast256BitsLong2024
+      - RABBITMQ_USERNAME=${RABBITMQ_USERNAME:?RABBITMQ_USERNAME is required}
+      - RABBITMQ_PASSWORD=${RABBITMQ_PASSWORD:?RABBITMQ_PASSWORD is required}
+      - JWT_SECRET=${JWT_SECRET:?JWT_SECRET is required}
+      - JWT_ACCESS_EXPIRATION=${JWT_ACCESS_EXPIRATION:-900000}
+      - JWT_REFRESH_EXPIRATION=${JWT_REFRESH_EXPIRATION:-604800000}
     depends_on:
       auth-db:
         condition: service_healthy
@@ -114,11 +118,13 @@ services:
     environment:
       - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://discovery-server:8761/eureka/
       - RABBITMQ_HOST=rabbitmq
-      - MAIL_HOST=smtp.gmail.com
-      - MAIL_PORT=587
-      - MAIL_USERNAME=${MAIL_USERNAME:-your-email@gmail.com}
-      - MAIL_PASSWORD=${MAIL_PASSWORD:-your-app-password}
-      - FRONTEND_URL=http://localhost:3000
+      - RABBITMQ_USERNAME=${RABBITMQ_USERNAME:?RABBITMQ_USERNAME is required}
+      - RABBITMQ_PASSWORD=${RABBITMQ_PASSWORD:?RABBITMQ_PASSWORD is required}
+      - MAIL_HOST=${MAIL_HOST:-smtp.gmail.com}
+      - MAIL_PORT=${MAIL_PORT:-587}
+      - MAIL_USERNAME=${MAIL_USERNAME:?MAIL_USERNAME is required}
+      - MAIL_PASSWORD=${MAIL_PASSWORD:?MAIL_PASSWORD is required}
+      - FRONTEND_URL=${FRONTEND_URL:-http://localhost:3000}
     depends_on:
       rabbitmq:
         condition: service_healthy

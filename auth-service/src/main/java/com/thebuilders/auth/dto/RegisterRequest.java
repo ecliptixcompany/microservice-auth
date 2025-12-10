@@ -1,10 +1,8 @@
 package com.thebuilders.auth.dto;
 
-import com.thebuilders.common.enums.Role;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -39,6 +37,6 @@ public class RegisterRequest {
     @Schema(description = "Phone number", example = "+15551234567")
     private String phoneNumber;
 
-    @Schema(description = "User role (defaults to USER if not specified)", example = "USER")
-    private Role role;
+    // Role field removed for security - users are always registered as USER
+    // Admin users should be created through a separate admin endpoint or database seeding
 }

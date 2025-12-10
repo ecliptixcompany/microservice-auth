@@ -1,4 +1,4 @@
-/Users/syanak/42/BilişimVadisiHackathon/mail-service/src/main/java/com/thebuilders/mail/listener/EmailEventListener.java
-/Users/syanak/42/BilişimVadisiHackathon/mail-service/src/main/java/com/thebuilders/mail/config/RabbitMQConfig.java
-/Users/syanak/42/BilişimVadisiHackathon/mail-service/src/main/java/com/thebuilders/mail/service/EmailService.java
-/Users/syanak/42/BilişimVadisiHackathon/mail-service/src/main/java/com/thebuilders/mail/MailServiceApplication.java
+/Users/syanak/42/microservice-auth/mail-service/src/main/java/com/thebuilders/mail/config/RabbitMQConfig.java
+/Users/syanak/42/microservice-auth/mail-service/src/main/java/com/thebuilders/mail/listener/EmailEventListener.java
+/Users/syanak/42/microservice-auth/mail-service/src/main/java/com/thebuilders/mail/MailServiceApplication.java
+/Users/syanak/42/microservice-auth/mail-service/src/main/java/com/thebuilders/mail/service/EmailService.java

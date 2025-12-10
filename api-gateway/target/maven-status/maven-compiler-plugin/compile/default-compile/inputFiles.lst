@@ -1,4 +1,4 @@
-/Users/syanak/42/BilişimVadisiHackathon/api-gateway/src/main/java/com/thebuilders/gateway/config/JwtUtil.java
-/Users/syanak/42/BilişimVadisiHackathon/api-gateway/src/main/java/com/thebuilders/gateway/config/OpenApiConfig.java
-/Users/syanak/42/BilişimVadisiHackathon/api-gateway/src/main/java/com/thebuilders/gateway/ApiGatewayApplication.java
-/Users/syanak/42/BilişimVadisiHackathon/api-gateway/src/main/java/com/thebuilders/gateway/filter/AuthenticationFilter.java
+/Users/syanak/42/microservice-auth/api-gateway/src/main/java/com/thebuilders/gateway/ApiGatewayApplication.java
+/Users/syanak/42/microservice-auth/api-gateway/src/main/java/com/thebuilders/gateway/config/JwtUtil.java
+/Users/syanak/42/microservice-auth/api-gateway/src/main/java/com/thebuilders/gateway/filter/AuthenticationFilter.java
+/Users/syanak/42/microservice-auth/api-gateway/src/main/java/com/thebuilders/gateway/config/OpenApiConfig.java

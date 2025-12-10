@@ -45,8 +45,8 @@ public class AuthService {
             throw new AuthException("Email already registered");
         }
 
-        // Default role to USER if not specified
-        Role userRole = request.getRole() != null ? request.getRole() : Role.USER;
+        // Security: Always assign USER role for public registration
+        // Admin users should be created through admin endpoints or database seeding
 
         // Create user
         User user = User.builder()
@@ -55,7 +55,7 @@ public class AuthService {
                 .firstName(request.getFirstName())
                 .lastName(request.getLastName())
                 .phoneNumber(request.getPhoneNumber())
-                .role(userRole)
+                .role(Role.USER)
                 .isEmailVerified(false)
                 .emailVerificationToken(UUID.randomUUID().toString())
                 .isActive(true)

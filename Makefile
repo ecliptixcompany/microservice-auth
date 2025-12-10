@@ -1,11 +1,11 @@
 # Microservice Auth System - Makefile
-# Production-ready authentication microservices
+# Docker-based production-ready authentication microservices
+# No local Maven/Java required - everything runs in Docker
 
 .PHONY: all build clean start stop restart status logs \
-        start-infra stop-infra \
-        start-discovery start-gateway start-auth start-mail \
-        stop-discovery stop-gateway stop-auth stop-mail \
-        test install help
+        start-infra stop-infra start-all stop-all \
+        build-services logs-auth logs-mail logs-errors \
+        test help
 
 # Renkler
 GREEN := $(shell printf "\033[0;32m")
@@ -14,17 +14,7 @@ YELLOW := $(shell printf "\033[0;33m")
 BLUE := $(shell printf "\033[0;34m")
 NC := $(shell printf "\033[0m")
 
-# Java 21 Configuration
 SHELL := /bin/bash
-export JAVA_HOME := /opt/homebrew/opt/openjdk@21/libexec/openjdk.jdk/Contents/Home
-export PATH := $(JAVA_HOME)/bin:$(shell echo $$PATH)
-
-# PID dosyaları
-PID_DIR := .pids
-DISCOVERY_PID := $(PID_DIR)/discovery.pid
-GATEWAY_PID := $(PID_DIR)/gateway.pid
-AUTH_PID := $(PID_DIR)/auth.pid
-MAIL_PID := $(PID_DIR)/mail.pid
 
 # Portlar
 DISCOVERY_PORT := 8761
@@ -38,80 +28,71 @@ MAIL_PORT := 8082
 
 help: ## Yardım menüsü
 	@echo ""
-	@echo "$(BLUE)Microservice Auth System - Komut Listesi$(NC)"
-	@echo "$(BLUE)=========================================$(NC)"
+	@echo "$(BLUE)Microservice Auth System - Docker Komut Listesi$(NC)"
+	@echo "$(BLUE)=================================================$(NC)"
+	@echo "$(YELLOW)Not: Tüm servisler Docker ile çalışır - Maven/Java gerektirmez!$(NC)"
 	@echo ""
-	@echo "$(GREEN)Ana Komutlar:$(NC)"
-	@echo "  make start          - Tüm servisleri başlat (infra + apps)"
-	@echo "  make stop           - Tüm servisleri durdur"
-	@echo "  make restart        - Tüm servisleri yeniden başlat"
+	@echo "$(GREEN)Ana Komutlar (Hızlı Başlangıç):$(NC)"
+	@echo "  make start          - Tüm sistemi başlat (infra + services)"
+	@echo "  make stop           - Tüm sistemi durdur"
+	@echo "  make restart        - Tüm sistemi yeniden başlat"
 	@echo "  make status         - Servis durumlarını göster"
 	@echo ""
-	@echo "$(GREEN)Build Komutları:$(NC)"
-	@echo "  make build          - Tüm modülleri derle"
-	@echo "  make install        - Tüm modülleri derle ve yükle"
-	@echo "  make clean          - Build dosyalarını temizle"
-	@echo "  make test           - Testleri çalıştır"
+	@echo "$(GREEN)Build & Deploy Komutları:$(NC)"
+	@echo "  make build          - Tüm Docker image'larını build et"
+	@echo "  make rebuild        - Cache kullanmadan yeniden build et"
+	@echo "  make clean          - Tüm container ve image'ları temizle"
 	@echo ""
 	@echo "$(GREEN)Altyapı Komutları:$(NC)"
-	@echo "  make start-infra    - Docker altyapısını başlat (DB, RabbitMQ, MailHog)"
-	@echo "  make stop-infra     - Docker altyapısını durdur"
-	@echo ""
-	@echo "$(GREEN)Bireysel Servis Komutları:$(NC)"
-	@echo "  make start-discovery  - Discovery Server başlat"
-	@echo "  make start-gateway    - API Gateway başlat"
-	@echo "  make start-auth       - Auth Service başlat"
-	@echo "  make start-mail       - Mail Service başlat"
-	@echo ""
-	@echo "  make stop-discovery   - Discovery Server durdur"
-	@echo "  make stop-gateway     - API Gateway durdur"
-	@echo "  make stop-auth        - Auth Service durdur"
-	@echo "  make stop-mail        - Mail Service durdur"
-	@echo ""
-	@echo "$(GREEN)Log Komutları:$(NC)"
-	@echo "  make logs           - Tüm logları göster"
-	@echo "  make logs-auth      - Auth Service loglarını göster"
-	@echo "  make logs-mail      - Mail Service loglarını göster"
-	@echo "  make logs-errors    - Error loglarını göster"
+	@echo "  make start-infra    - Altyapı başlat (DB, RabbitMQ, Redis, MailHog)"
+	@echo "  make stop-infra     - Altyapı durdur"
 	@echo ""
 	@echo "$(GREEN)Monitoring Komutları:$(NC)"
 	@echo "  make start-monitoring - Grafana + Loki başlat"
 	@echo "  make stop-monitoring  - Grafana + Loki durdur"
 	@echo ""
+	@echo "$(GREEN)Log Komutları:$(NC)"
+	@echo "  make logs           - Tüm container loglarını göster"
+	@echo "  make logs-auth      - Auth Service loglarını takip et"
+	@echo "  make logs-mail      - Mail Service loglarını takip et"
+	@echo "  make logs-discovery - Discovery Server loglarını takip et"
+	@echo "  make logs-gateway   - API Gateway loglarını takip et"
+	@echo "  make logs-errors    - Error loglarını göster"
+	@echo ""
 	@echo "$(YELLOW)Erişim URL'leri:$(NC)"
 	@echo "  Eureka Dashboard:   http://localhost:8761"
 	@echo "  API Gateway:        http://localhost:8080"
+	@echo "  Auth Service:       http://localhost:8081"
+	@echo "  Mail Service:       http://localhost:8082"
 	@echo "  RabbitMQ:           http://localhost:15672 (guest/guest)"
 	@echo "  MailHog:            http://localhost:8025"
 	@echo "  Grafana:            http://localhost:3001 (admin/admin123)"
 	@echo ""
 
-all: build ## Derle
+all: build ## Build et
 
 # ============================================
 # BUILD KOMUTLARI
 # ============================================
 
-build: ## Tüm modülleri derle
-	@echo "$(BLUE)► Proje derleniyor...$(NC)"
-	@mvn clean compile -DskipTests
-	@echo "$(GREEN)✓ Derleme tamamlandı$(NC)"
+build: ## Docker image'larını build et
+	@echo "$(BLUE)► Docker image'ları build ediliyor...$(NC)"
+	@mkdir -p logs
+	@docker-compose build discovery-server api-gateway auth-service mail-service
+	@echo "$(GREEN)✓ Build tamamlandı$(NC)"
 
-install: ## Tüm modülleri derle ve local repo'ya yükle
-	@echo "$(BLUE)► Proje derleniyor ve yükleniyor...$(NC)"
-	@mvn clean install -DskipTests
-	@echo "$(GREEN)✓ Yükleme tamamlandı$(NC)"
+rebuild: ## Cache kullanmadan yeniden build et
+	@echo "$(BLUE)► Docker image'ları cache olmadan build ediliyor...$(NC)"
+	@mkdir -p logs
+	@docker-compose build --no-cache discovery-server api-gateway auth-service mail-service
+	@echo "$(GREEN)✓ Rebuild tamamlandı$(NC)"
 
-clean: ## Build dosyalarını temizle
+clean: ## Tüm container, image ve volume'ları temizle
 	@echo "$(BLUE)► Temizleniyor...$(NC)"
-	@mvn clean
-	@rm -rf $(PID_DIR)
+	@docker-compose down -v --remove-orphans
+	@docker system prune -f
+	@rm -rf logs/*.log
 	@echo "$(GREEN)✓ Temizlendi$(NC)"
-
-test: ## Testleri çalıştır
-	@echo "$(BLUE)► Testler çalıştırılıyor...$(NC)"
-	@mvn test
-	@echo "$(GREEN)✓ Testler tamamlandı$(NC)"
 
 # ============================================
 # ALTYAPI KOMUTLARI
@@ -119,15 +100,15 @@ test: ## Testleri çalıştır
 
 start-infra: ## Docker altyapısını başlat
 	@echo "$(BLUE)► Docker altyapısı başlatılıyor...$(NC)"
-	@docker-compose up -d auth-db rabbitmq mailhog redis loki promtail grafana
-	@echo "$(GREEN)✓ PostgreSQL, RabbitMQ, MailHog, Redis, Loki, Promtail, Grafana başlatıldı$(NC)"
+	@mkdir -p logs
+	@docker-compose up -d auth-db rabbitmq mailhog redis
+	@echo "$(GREEN)✓ PostgreSQL, RabbitMQ, MailHog, Redis başlatıldı$(NC)"
 	@sleep 5
 	@make infra-status
-	@make monitoring-status
 
 stop-infra: ## Docker altyapısını durdur
 	@echo "$(BLUE)► Docker altyapısı durduruluyor...$(NC)"
-	@docker-compose down
+	@docker-compose stop auth-db rabbitmq mailhog redis
 	@echo "$(GREEN)✓ Altyapı durduruldu$(NC)"
 
 # ============================================
@@ -162,153 +143,34 @@ infra-status: ## Docker container durumları
 	@echo ""
 
 # ============================================
-# PID KLASÖRÜ
+# SERVİS KOMUTLARI (Docker-based)
 # ============================================
 
-$(PID_DIR):
-	@mkdir -p $(PID_DIR)
-
-# ============================================
-# SERVİS BAŞLATMA
-# ============================================
-
-start-discovery: $(PID_DIR) ## Discovery Server başlat
-	@if [ -f $(DISCOVERY_PID) ] && kill -0 $$(cat $(DISCOVERY_PID)) 2>/dev/null; then \
-		echo "$(YELLOW)⚠ Discovery Server zaten çalışıyor (PID: $$(cat $(DISCOVERY_PID)))$(NC)"; \
-	else \
-		echo "$(BLUE)► Discovery Server başlatılıyor (port $(DISCOVERY_PORT))...$(NC)"; \
-		cd discovery-server && mvn spring-boot:run -Dspring-boot.run.jvmArguments="-DLOG_PATH=../logs" > /dev/null 2>&1 & echo $$! > $(DISCOVERY_PID); \
-		sleep 5; \
-		if curl -s http://localhost:$(DISCOVERY_PORT) > /dev/null 2>&1; then \
-			echo "$(GREEN)✓ Discovery Server başlatıldı (PID: $$(cat $(DISCOVERY_PID)))$(NC)"; \
-		else \
-			echo "$(YELLOW)⏳ Discovery Server başlatılıyor... (PID: $$(cat $(DISCOVERY_PID)))$(NC)"; \
-		fi \
-	fi
-
-start-gateway: $(PID_DIR) ## API Gateway başlat
-	@if [ -f $(GATEWAY_PID) ] && kill -0 $$(cat $(GATEWAY_PID)) 2>/dev/null; then \
-		echo "$(YELLOW)⚠ API Gateway zaten çalışıyor (PID: $$(cat $(GATEWAY_PID)))$(NC)"; \
-	else \
-		echo "$(BLUE)► API Gateway başlatılıyor (port $(GATEWAY_PORT))...$(NC)"; \
-		cd api-gateway && mvn spring-boot:run -Dspring-boot.run.jvmArguments="-DLOG_PATH=../logs" > /dev/null 2>&1 & echo $$! > $(GATEWAY_PID); \
-		sleep 5; \
-		if curl -s http://localhost:$(GATEWAY_PORT)/actuator/health > /dev/null 2>&1; then \
-			echo "$(GREEN)✓ API Gateway başlatıldı (PID: $$(cat $(GATEWAY_PID)))$(NC)"; \
-		else \
-			echo "$(YELLOW)⏳ API Gateway başlatılıyor... (PID: $$(cat $(GATEWAY_PID)))$(NC)"; \
-		fi \
-	fi
-
-start-auth: $(PID_DIR) ## Auth Service başlat
-	@if [ -f $(AUTH_PID) ] && kill -0 $$(cat $(AUTH_PID)) 2>/dev/null; then \
-		echo "$(YELLOW)⚠ Auth Service zaten çalışıyor (PID: $$(cat $(AUTH_PID)))$(NC)"; \
-	else \
-		echo "$(BLUE)► Auth Service başlatılıyor (port $(AUTH_PORT))...$(NC)"; \
-		cd auth-service && mvn spring-boot:run -Dspring-boot.run.jvmArguments="-DLOG_PATH=../logs" > /dev/null 2>&1 & echo $$! > $(AUTH_PID); \
-		sleep 5; \
-		if curl -s http://localhost:$(AUTH_PORT)/actuator/health > /dev/null 2>&1; then \
-			echo "$(GREEN)✓ Auth Service başlatıldı (PID: $$(cat $(AUTH_PID)))$(NC)"; \
-		else \
-			echo "$(YELLOW)⏳ Auth Service başlatılıyor... (PID: $$(cat $(AUTH_PID)))$(NC)"; \
-		fi \
-	fi
-
-start-mail: $(PID_DIR) ## Mail Service başlat
-	@if [ -f $(MAIL_PID) ] && kill -0 $$(cat $(MAIL_PID)) 2>/dev/null; then \
-		echo "$(YELLOW)⚠ Mail Service zaten çalışıyor (PID: $$(cat $(MAIL_PID)))$(NC)"; \
-	else \
-		echo "$(BLUE)► Mail Service başlatılıyor (port $(MAIL_PORT))...$(NC)"; \
-		cd mail-service && mvn spring-boot:run -Dspring-boot.run.jvmArguments="-DLOG_PATH=../logs" > /dev/null 2>&1 & echo $$! > $(MAIL_PID); \
-		sleep 5; \
-		if curl -s http://localhost:$(MAIL_PORT)/actuator/health > /dev/null 2>&1; then \
-			echo "$(GREEN)✓ Mail Service başlatıldı (PID: $$(cat $(MAIL_PID)))$(NC)"; \
-		else \
-			echo "$(YELLOW)⏳ Mail Service başlatılıyor... (PID: $$(cat $(MAIL_PID)))$(NC)"; \
-		fi \
-	fi
-
-# ============================================
-# SERVİS DURDURMA
-# ============================================
-
-stop-discovery: ## Discovery Server durdur
-	@if [ -f $(DISCOVERY_PID) ]; then \
-		echo "$(BLUE)► Discovery Server durduruluyor...$(NC)"; \
-		kill $$(cat $(DISCOVERY_PID)) 2>/dev/null || true; \
-		rm -f $(DISCOVERY_PID); \
-		echo "$(GREEN)✓ Discovery Server durduruldu$(NC)"; \
-	else \
-		echo "$(YELLOW)⚠ Discovery Server zaten çalışmıyor$(NC)"; \
-	fi
-
-stop-gateway: ## API Gateway durdur
-	@if [ -f $(GATEWAY_PID) ]; then \
-		echo "$(BLUE)► API Gateway durduruluyor...$(NC)"; \
-		kill $$(cat $(GATEWAY_PID)) 2>/dev/null || true; \
-		rm -f $(GATEWAY_PID); \
-		echo "$(GREEN)✓ API Gateway durduruldu$(NC)"; \
-	else \
-		echo "$(YELLOW)⚠ API Gateway zaten çalışmıyor$(NC)"; \
-	fi
-
-stop-auth: ## Auth Service durdur
-	@if [ -f $(AUTH_PID) ]; then \
-		echo "$(BLUE)► Auth Service durduruluyor...$(NC)"; \
-		kill $$(cat $(AUTH_PID)) 2>/dev/null || true; \
-		rm -f $(AUTH_PID); \
-		echo "$(GREEN)✓ Auth Service durduruldu$(NC)"; \
-	else \
-		echo "$(YELLOW)⚠ Auth Service zaten çalışmıyor$(NC)"; \
-	fi
-
-stop-mail: ## Mail Service durdur
-	@if [ -f $(MAIL_PID) ]; then \
-		echo "$(BLUE)► Mail Service durduruluyor...$(NC)"; \
-		kill $$(cat $(MAIL_PID)) 2>/dev/null || true; \
-		rm -f $(MAIL_PID); \
-		echo "$(GREEN)✓ Mail Service durduruldu$(NC)"; \
-	else \
-		echo "$(YELLOW)⚠ Mail Service zaten çalışmıyor$(NC)"; \
-	fi
-
-# ============================================
-# TOPLU KOMUTLAR
-# ============================================
-
-start: install start-infra ## Tüm sistemi başlat
+start: start-infra ## Tüm sistemi başlat (infra + services)
 	@echo ""
-	@echo "$(BLUE)Servisler Başlatılıyor...$(NC)"
+	@echo "$(BLUE)► Mikroservisler başlatılıyor...$(NC)"
 	@mkdir -p logs
-	@make start-discovery
-	@echo "$(YELLOW)Discovery Server hazır olması bekleniyor...$(NC)"
+	@docker-compose up -d discovery-server api-gateway auth-service mail-service
+	@echo "$(GREEN)✓ Tüm servisler başlatıldı$(NC)"
+	@echo ""
+	@echo "$(YELLOW)Servisler hazır olması bekleniyor (yaklaşık 60 saniye)...$(NC)"
 	@sleep 10
-	@make start-gateway
-	@sleep 5
-	@make start-auth
-	@sleep 5
-	@make start-mail
-	@echo ""
-	@echo "$(GREEN)Tüm Servisler Başlatıldı$(NC)"
-	@echo ""
-	@sleep 5
 	@make status
 
 stop: ## Tüm servisleri durdur
-	@echo ""
-	@echo "$(BLUE)Servisler Durduruluyor...$(NC)"
-	@make stop-mail
-	@make stop-auth
-	@make stop-gateway
-	@make stop-discovery
-	@pkill -f "spring-boot:run" 2>/dev/null || true
-	@echo "$(GREEN)Tüm Spring Boot servisleri durduruldu$(NC)"
-	@echo ""
+	@echo "$(BLUE)► Servisler durduruluyor...$(NC)"
+	@docker-compose stop discovery-server api-gateway auth-service mail-service
+	@echo "$(GREEN)✓ Tüm servisler durduruldu$(NC)"
 
-stop-all: stop stop-infra ## Tüm sistemi durdur (servisler + altyapı)
+stop-all: ## Tüm sistemi durdur (servisler + altyapı + monitoring)
+	@echo "$(BLUE)► Tüm sistem durduruluyor...$(NC)"
+	@docker-compose down
 	@echo "$(GREEN)✓ Tüm sistem durduruldu$(NC)"
 
-restart: stop start ## Tüm servisleri yeniden başlat
+restart: ## Tüm servisleri yeniden başlat
+	@make stop
+	@sleep 2
+	@make start
 
 # ============================================
 # DURUM KONTROLÜ
@@ -351,34 +213,23 @@ status: ## Servis durumlarını göster
 # LOG KOMUTLARI
 # ============================================
 
-logs: ## Tüm logları göster
-	@echo "$(BLUE)► Son loglar:$(NC)"
-	@echo ""
-	@echo "$(YELLOW)=== Discovery Server ===$(NC)"
-	@tail -30 logs/discovery-server.log 2>/dev/null || echo "Log dosyası bulunamadı"
-	@echo ""
-	@echo "$(YELLOW)=== API Gateway ===$(NC)"
-	@tail -30 logs/api-gateway.log 2>/dev/null || echo "Log dosyası bulunamadı"
-	@echo ""
-	@echo "$(YELLOW)=== Auth Service ===$(NC)"
-	@tail -30 logs/auth-service.log 2>/dev/null || echo "Log dosyası bulunamadı"
-	@echo ""
-	@echo "$(YELLOW)=== Mail Service ===$(NC)"
-	@tail -30 logs/mail-service.log 2>/dev/null || echo "Log dosyası bulunamadı"
+logs: ## Tüm container loglarını göster
+	@echo "$(BLUE)► Container logları:$(NC)"
+	@docker-compose logs --tail=50
 
 logs-discovery: ## Discovery Server loglarını takip et
-	@tail -f logs/discovery-server.log
+	@docker-compose logs -f discovery-server
 
 logs-gateway: ## API Gateway loglarını takip et
-	@tail -f logs/api-gateway.log
+	@docker-compose logs -f api-gateway
 
 logs-auth: ## Auth Service loglarını takip et
-	@tail -f logs/auth-service.log
+	@docker-compose logs -f auth-service
 
 logs-mail: ## Mail Service loglarını takip et
-	@tail -f logs/mail-service.log
+	@docker-compose logs -f mail-service
 
-logs-errors: ## Tüm error loglarını göster
+logs-errors: ## Tüm error loglarını göster (dosya bazlı)
 	@echo "$(RED)=== Error Logs ===$(NC)"
 	@echo ""
 	@echo "$(YELLOW)--- Discovery Server Errors ---$(NC)"
@@ -397,27 +248,3 @@ logs-clean: ## Eski log dosyalarını temizle
 	@echo "$(BLUE)► Log dosyaları temizleniyor...$(NC)"
 	@rm -f logs/*.log logs/*.log.gz
 	@echo "$(GREEN)✓ Log dosyaları temizlendi$(NC)"
-
-# ============================================
-# HIZLI BAŞLATMA (sadece servisler - altyapı hazır varsayılır)
-# ============================================
-
-quick-start: $(PID_DIR) ## Hızlı başlat (build + altyapı olmadan)
-	@mkdir -p logs
-	@echo "$(BLUE)► Servisler hızlı başlatılıyor...$(NC)"
-	@make start-discovery
-	@sleep 8
-	@make start-gateway
-	@sleep 3
-	@make start-auth
-	@sleep 3
-	@make start-mail
-	@sleep 3
-	@make status
-
-# ============================================
-# DEVELOPMENT
-# ============================================
-
-dev: start-infra quick-start ## Development modu (altyapı + servisler)
-	@echo "$(GREEN)✓ Development ortamı hazır!$(NC)"

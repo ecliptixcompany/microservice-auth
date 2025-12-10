@@ -61,6 +61,132 @@ services:
       - career-portal-network
 
   # ============================================
+  # SPRING BOOT MICROSERVICES
+  # ============================================
+
+  # Discovery Server (Eureka)
+  discovery-server:
+    build:
+      context: .
+      dockerfile: discovery-server/Dockerfile
+    container_name: discovery-server
+    ports:
+      - "8761:8761"
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - LOG_PATH=/app/logs
+    volumes:
+      - ./logs:/app/logs
+    networks:
+      - career-portal-network
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:8761 || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+  # API Gateway
+  api-gateway:
+    build:
+      context: .
+      dockerfile: api-gateway/Dockerfile
+    container_name: api-gateway
+    ports:
+      - "8080:8080"
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://discovery-server:8761/eureka/
+      - LOG_PATH=/app/logs
+    volumes:
+      - ./logs:/app/logs
+    networks:
+      - career-portal-network
+    depends_on:
+      discovery-server:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:8080/actuator/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+  # Auth Service
+  auth-service:
+    build:
+      context: .
+      dockerfile: auth-service/Dockerfile
+    container_name: auth-service
+    ports:
+      - "8081:8081"
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://discovery-server:8761/eureka/
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://auth-db:5432/${DB_NAME:-auth_db}
+      - SPRING_DATASOURCE_USERNAME=${DB_USERNAME:-postgres}
+      - SPRING_DATASOURCE_PASSWORD=${DB_PASSWORD:-postgres}
+      - SPRING_RABBITMQ_HOST=rabbitmq
+      - SPRING_RABBITMQ_USERNAME=${RABBITMQ_USERNAME:-rabbitmq_user}
+      - SPRING_RABBITMQ_PASSWORD=${RABBITMQ_PASSWORD:-rabbitmq_pass}
+      - SPRING_DATA_REDIS_HOST=redis
+      - LOG_PATH=/app/logs
+    volumes:
+      - ./logs:/app/logs
+    networks:
+      - career-portal-network
+    depends_on:
+      discovery-server:
+        condition: service_healthy
+      auth-db:
+        condition: service_started
+      rabbitmq:
+        condition: service_started
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:8081/actuator/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+  # Mail Service
+  mail-service:
+    build:
+      context: .
+      dockerfile: mail-service/Dockerfile
+    container_name: mail-service
+    ports:
+      - "8082:8082"
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://discovery-server:8761/eureka/
+      - SPRING_RABBITMQ_HOST=rabbitmq
+      - SPRING_RABBITMQ_USERNAME=${RABBITMQ_USERNAME:-rabbitmq_user}
+      - SPRING_RABBITMQ_PASSWORD=${RABBITMQ_PASSWORD:-rabbitmq_pass}
+      - SPRING_MAIL_HOST=mailhog
+      - SPRING_MAIL_PORT=1025
+      - LOG_PATH=/app/logs
+    volumes:
+      - ./logs:/app/logs
+    networks:
+      - career-portal-network
+    depends_on:
+      discovery-server:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_started
+      mailhog:
+        condition: service_started
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:8082/actuator/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+  # ============================================
   # MONITORING STACK (Grafana + Loki + Promtail)
   # ============================================
 

@@ -377,13 +377,13 @@
             "uid": "loki"
           },
           "editorMode": "code",
-          "expr": "{job=\"spring-boot\"} |= \"$search\"",
+          "expr": "{job=\"spring-boot\"} |~ \"ERROR\" |= \"$search\"",
           "legendFormat": "",
           "queryType": "range",
           "refId": "A"
         }
       ],
-      "title": "Live Logs",
+      "title": "Live Logs (ERROR only)",
       "type": "logs"
     },
     {

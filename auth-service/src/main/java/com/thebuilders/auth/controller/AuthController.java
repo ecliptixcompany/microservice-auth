@@ -90,12 +90,18 @@ public class AuthController {
             summary = "Logout",
             description = "Invalidate the refresh token and end the session."
     )
-    @PostMapping("/logout")
-    public ResponseEntity<ApiResponse<Void>> logout(
-            @RequestBody RefreshTokenRequest request) {
-        authService.logout(request.getRefreshToken());
-        return ResponseEntity.ok(ApiResponse.success("Logged out successfully", null));
-    }
+        @PostMapping("/logout")
+        public ResponseEntity<ApiResponse<Void>> logout(
+                        @RequestHeader("Authorization") String authorization,
+                        @RequestBody RefreshTokenRequest request) {
+                // Extract Bearer token
+                String accessToken = null;
+                if (authorization != null && authorization.startsWith("Bearer ")) {
+                        accessToken = authorization.substring(7);
+                }
+                authService.logout(request.getRefreshToken(), accessToken);
+                return ResponseEntity.ok(ApiResponse.success("Logged out successfully", null));
+        }
 
     @Operation(
             summary = "Verify email",

@@ -169,14 +169,19 @@ public class AuthService {
     }
 
     @Transactional
-    public void logout(String refreshToken) {
+    public void logout(String refreshToken, String accessToken) {
         refreshTokenRepository.findByToken(refreshToken)
                 .ifPresent(token -> {
                     token.setRevoked(true);
                     refreshTokenRepository.save(token);
-                    // Blacklist access token (client should send access token in header)
-                    // For demo, assume access token is sent as part of request (not shown here)
-                    // Example: tokenBlacklistService.blacklistToken(accessToken, jwtService.getAccessTokenExpiration() / 1000);
+                    // Blacklist access token if provided
+                    if (accessToken != null && !accessToken.isEmpty()) {
+                        long expSeconds = (jwtService.extractExpiration(accessToken).getTime() - System.currentTimeMillis()) / 1000;
+                        if (expSeconds > 0) {
+                            tokenBlacklistService.blacklistToken(accessToken, expSeconds);
+                            log.info("Access token blacklisted for logout");
+                        }
+                    }
                     log.info("User logged out");
                 });
     }

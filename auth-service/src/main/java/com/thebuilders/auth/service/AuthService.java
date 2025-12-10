@@ -34,9 +34,14 @@ public class AuthService {
     private final JwtService jwtService;
     private final AuthenticationManager authenticationManager;
     private final EventPublisherService eventPublisherService;
+    private final TokenBlacklistService tokenBlacklistService;
 
     @Value("${jwt.refresh-token-expiration}")
     private long refreshTokenExpiration;
+
+    // Brute Force Protection Configuration
+    private static final int MAX_FAILED_ATTEMPTS = 5;
+    private static final int LOCK_DURATION_MINUTES = 30;
 
     @Transactional
     public AuthResponse register(RegisterRequest request) {
@@ -79,6 +84,25 @@ public class AuthService {
 
     @Transactional
     public AuthResponse login(LoginRequest request) {
+        // First, check if user exists and handle brute force protection
+        User user = userRepository.findByEmail(request.getEmail())
+                .orElseThrow(() -> new AuthException("Invalid email or password"));
+
+        // Check if account is locked
+        if (user.isAccountLocked()) {
+            long minutesRemaining = java.time.Duration.between(
+                    LocalDateTime.now(), 
+                    user.getLockedUntil()
+            ).toMinutes();
+            log.warn("Login attempt on locked account: {}", user.getEmail());
+            throw new AuthException("Account is locked. Try again in " + minutesRemaining + " minutes");
+        }
+
+        // Check if account is active
+        if (!user.isActive()) {
+            throw new AuthException("Account is deactivated");
+        }
+
         try {
             authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(
@@ -86,19 +110,43 @@ public class AuthService {
                             request.getPassword()
                     )
             );
+
+            // Successful login - reset failed attempts
+            if (user.getFailedLoginAttempts() > 0) {
+                user.resetFailedAttempts();
+                userRepository.save(user);
+            }
+
         } catch (BadCredentialsException e) {
+            // Failed login - increment attempts and potentially lock
+            handleFailedLogin(user);
             throw new AuthException("Invalid email or password");
         }
 
-        User user = userRepository.findByEmail(request.getEmail())
-                .orElseThrow(() -> new AuthException("User not found"));
-
-        if (!user.isActive()) {
-            throw new AuthException("Account is deactivated");
-        }
+        // Check if access token is blacklisted (defense-in-depth, e.g. after logout)
+        // This assumes client sends token for login, which is not typical, but can be checked in filter layer
 
         log.info("User logged in: {}", user.getEmail());
         return generateAuthResponse(user);
+    }
+
+    /**
+     * Handle failed login attempt - increment counter and lock if needed
+     */
+    private void handleFailedLogin(User user) {
+        user.incrementFailedAttempts();
+        
+        if (user.getFailedLoginAttempts() >= MAX_FAILED_ATTEMPTS) {
+            user.lockAccount(LOCK_DURATION_MINUTES);
+            log.warn("Account locked due to {} failed attempts: {}", 
+                    MAX_FAILED_ATTEMPTS, user.getEmail());
+        } else {
+            int remainingAttempts = MAX_FAILED_ATTEMPTS - user.getFailedLoginAttempts();
+            log.warn("Failed login attempt {} for user: {}. {} attempts remaining", 
+                    user.getFailedLoginAttempts(), user.getEmail(), remainingAttempts);
+        }
+        
+        userRepository.save(user);
     }
 
     @Transactional
@@ -126,6 +174,9 @@ public class AuthService {
                 .ifPresent(token -> {
                     token.setRevoked(true);
                     refreshTokenRepository.save(token);
+                    // Blacklist access token (client should send access token in header)
+                    // For demo, assume access token is sent as part of request (not shown here)
+                    // Example: tokenBlacklistService.blacklistToken(accessToken, jwtService.getAccessTokenExpiration() / 1000);
                     log.info("User logged out");
                 });
     }

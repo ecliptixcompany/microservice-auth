@@ -77,6 +77,11 @@
             <groupId>com.microservice</groupId>
             <artifactId>common</artifactId>
         </dependency>
+            <!-- Redis for Token Blacklist -->
+            <dependency>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-starter-data-redis</artifactId>
+            </dependency>
 
         <!-- SpringDoc OpenAPI (Swagger UI) -->
         <dependency>

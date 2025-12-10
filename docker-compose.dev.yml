@@ -33,6 +33,23 @@ services:
     networks:
       - career-portal-network
 
+  # Redis - Rate Limiting & Token Blacklist
+  redis:
+    image: redis:7-alpine
+    container_name: redis
+    command: redis-server --appendonly yes
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    networks:
+      - career-portal-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   # Optional: MailHog for testing emails locally
   mailhog:
     image: mailhog/mailhog
@@ -108,5 +125,6 @@ networks:
 volumes:
   auth-db-data:
   rabbitmq-data:
+  redis-data:
   loki-data:
   grafana-data:

